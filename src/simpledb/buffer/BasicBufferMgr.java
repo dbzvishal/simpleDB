@@ -1,6 +1,12 @@
 package simpledb.buffer;
 
-import simpledb.file.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import simpledb.file.Block;
+import simpledb.file.FileMgr;
 
 /**
  * Manages the pinning and unpinning of buffers to blocks.
@@ -8,7 +14,9 @@ import simpledb.file.*;
  *
  */
 class BasicBufferMgr {
-   private Buffer[] bufferpool;
+   private Queue<Buffer> bufferpool;
+   private Map<Block, Buffer> bufferPoolMap;
+   private Map<Buffer, Block> bufferToBlockMap;
    private int numAvailable;
    
    /**
@@ -25,10 +33,12 @@ class BasicBufferMgr {
     * @param numbuffs the number of buffer slots to allocate
     */
    BasicBufferMgr(int numbuffs) {
-      bufferpool = new Buffer[numbuffs];
+	  bufferPoolMap = new HashMap<Block, Buffer>();
+	  bufferToBlockMap = new HashMap<Buffer, Block>();
+	  bufferpool = new LinkedBlockingQueue<Buffer>(numbuffs);
       numAvailable = numbuffs;
       for (int i=0; i<numbuffs; i++)
-         bufferpool[i] = new Buffer();
+         bufferpool.offer(new Buffer());
    }
    
    /**
@@ -38,7 +48,7 @@ class BasicBufferMgr {
    synchronized void flushAll(int txnum) {
       for (Buffer buff : bufferpool)
          if (buff.isModifiedBy(txnum))
-         buff.flush();
+        	 buff.flush();
    }
    
    /**
@@ -57,6 +67,7 @@ class BasicBufferMgr {
          if (buff == null)
             return null;
          buff.assignToBlock(blk);
+         addToBlockToBufferMap(blk, buff);
       }
       if (!buff.isPinned())
          numAvailable--;
@@ -77,12 +88,14 @@ class BasicBufferMgr {
       Buffer buff = chooseUnpinnedBuffer();
       if (buff == null)
          return null;
-      buff.assignToNew(filename, fmtr);
+      Block newBlk = buff.assignToNew(filename, fmtr);
+      bufferPoolMap.put(newBlk, buff);
+      pushBufferToEndToPool(buff);
       numAvailable--;
       buff.pin();
       return buff;
    }
-   
+
    /**
     * Unpins the specified buffer.
     * @param buff the buffer to be unpinned
@@ -102,18 +115,27 @@ class BasicBufferMgr {
    }
    
    private Buffer findExistingBuffer(Block blk) {
-      for (Buffer buff : bufferpool) {
-         Block b = buff.block();
-         if (b != null && b.equals(blk))
-            return buff;
-      }
-      return null;
+	  return bufferPoolMap.get(blk);
    }
    
    private Buffer chooseUnpinnedBuffer() {
       for (Buffer buff : bufferpool)
          if (!buff.isPinned())
-         return buff;
+        	 return buff;
       return null;
+   }
+   
+   private void pushBufferToEndToPool(Buffer buff) {
+	   if(bufferpool.remove(buff))
+		   bufferpool.add(buff);
+   }
+   
+   private void addToBlockToBufferMap(Block blk, Buffer buff) {
+	   Block oldBlk = bufferToBlockMap.get(buff);
+	   if(oldBlk!=null){
+		   bufferPoolMap.remove(oldBlk);
+	   }
+	   bufferPoolMap.put(blk, buff);
+	   bufferToBlockMap.put(buff, blk);
    }
 }
