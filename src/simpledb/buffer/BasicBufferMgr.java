@@ -89,8 +89,8 @@ class BasicBufferMgr {
       if (buff == null)
          return null;
       Block newBlk = buff.assignToNew(filename, fmtr);
-      bufferPoolMap.put(newBlk, buff);
-      pushBufferToEndToPool(buff);
+      addToBlockToBufferMap(newBlk, buff);
+      pushBufferToEndOfPool(buff);
       numAvailable--;
       buff.pin();
       return buff;
@@ -125,7 +125,7 @@ class BasicBufferMgr {
       return null;
    }
    
-   private void pushBufferToEndToPool(Buffer buff) {
+   private void pushBufferToEndOfPool(Buffer buff) {
 	   if(bufferpool.remove(buff))
 		   bufferpool.add(buff);
    }
