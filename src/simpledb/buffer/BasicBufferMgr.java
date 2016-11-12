@@ -67,7 +67,7 @@ class BasicBufferMgr {
          if (buff == null)
             return null;
          buff.assignToBlock(blk);
-         addToBlockToBufferMap(blk, buff);
+         updateBlockAndBufferReferences(blk, buff);
       }
       if (!buff.isPinned())
          numAvailable--;
@@ -89,8 +89,7 @@ class BasicBufferMgr {
       if (buff == null)
          return null;
       Block newBlk = buff.assignToNew(filename, fmtr);
-      addToBlockToBufferMap(newBlk, buff);
-      pushBufferToEndOfPool(buff);
+      updateBlockAndBufferReferences(newBlk, buff);
       numAvailable--;
       buff.pin();
       return buff;
@@ -130,12 +129,15 @@ class BasicBufferMgr {
 		   bufferpool.add(buff);
    }
    
-   private void addToBlockToBufferMap(Block blk, Buffer buff) {
+   private void updateBlockAndBufferReferences(Block blk, Buffer buff) {
 	   Block oldBlk = bufferToBlockMap.get(buff);
 	   if(oldBlk!=null){
 		   bufferPoolMap.remove(oldBlk);
 	   }
 	   bufferPoolMap.put(blk, buff);
 	   bufferToBlockMap.put(buff, blk);
+	   
+	   //Pushing buffer to end of FIFO queue used in buffer replacement algo
+	   pushBufferToEndOfPool(buff);
    }
 }
