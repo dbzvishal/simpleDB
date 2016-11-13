@@ -1,7 +1,11 @@
 package simpledb.log;
 
 import static simpledb.file.Page.INT_SIZE;
+import static simpledb.tx.recovery.LogRecord.CHECKPOINT;
+
 import simpledb.file.*;
+import simpledb.server.SimpleDB;
+
 import java.util.Iterator;
 
 /**
@@ -11,45 +15,65 @@ import java.util.Iterator;
  * @author Edward Sciore
  */
 class ForwardLogIterator implements Iterator<BasicLogRecord> {
-   private Block blk;
+   private Block blk = null;
    private Page pg = new Page();
    private int currentrec;
+   private int lastBlkNum = -1;
+   private int maxOffsetInBlock;
    
    /**
     * Creates an iterator for the records in the log file
-    * Give the block and the offset of the latest checkpoint or the start of the file as the input
+    * It starts from the last checkpoint else the start of the file
     * {@link LogMgr#iterator()}.
     */
-   ForwardLogIterator(Block blk, int offset) {
-      this.blk = blk;
-      pg.read(blk);
-      if(offset == -1)
+   ForwardLogIterator() {
+      LogIterator iter = SimpleDB.logMgr().backwordIterator();
+      while(iter.hasNext()){
+    	  BasicLogRecord rec = iter.next();
+    	  if(lastBlkNum == -1)
+        	  lastBlkNum = iter.getBlock().number();
+    	  int op = rec.nextInt();
+          switch (op) {
+             case CHECKPOINT:
+            	 blk = iter.getBlock();
+            	 currentrec = iter.getOffset();
+            	 break;
+          }
+          if(blk!=null) 
+        	  break;
+      }
+      if(blk==null){
+    	  blk = iter.getBlock();
     	  currentrec = INT_SIZE;
-      else
-    	  currentrec = offset;
+      } else 
+    	  currentrec += INT_SIZE;
+      
+      pg.read(blk);
+      this.maxOffsetInBlock = pg.getInt(LogMgr.LAST_POS);
    }
    
    /**
     * Determines if the current log record
-    * is the earliest record in the log file.
+    * is the last record in the log file.
     * @return true if there is an earlier record
     */
    public boolean hasNext() {
-     // return currentrec>0 || blk.number()>0;
+	   return (currentrec < maxOffsetInBlock || blk.number() < lastBlkNum);	   
    }
    
    /**
-    * Moves to the next log record in reverse order.
-    * If the current log record is the earliest in its block,
-    * then the method moves to the next oldest block,
+    * Moves to the next log record.
+    * If the current log record is the latest in its block,
+    * then the method moves to the next block,
     * and returns the log record from there.
     * @return the next earliest log record
     */
    public BasicLogRecord next() {
-//      if (currentrec == 0) 
-//         moveToNextBlock();
-//      currentrec = pg.getInt(currentrec);
-//      return new BasicLogRecord(pg, currentrec+INT_SIZE);
+      if (currentrec >= maxOffsetInBlock) 
+         moveToNextBlock();
+      BasicLogRecord log = new BasicLogRecord(pg, currentrec + INT_SIZE);
+      currentrec = pg.getInt(currentrec);
+      return log;
    }
    
    public void remove() {
@@ -57,12 +81,13 @@ class ForwardLogIterator implements Iterator<BasicLogRecord> {
    }
    
    /**
-    * Moves to the next log block in reverse order,
-    * and positions it after the last record in that block.
+    * Moves to the next log block,
+    * and positions it after the first 4 bytes in that block.
     */
    private void moveToNextBlock() {
-//      blk = new Block(blk.fileName(), blk.number()-1);
-//      pg.read(blk);
-//      currentrec = pg.getInt(LogMgr.LAST_POS);
+      blk = new Block(blk.fileName(), blk.number()+1);
+      pg.read(blk);
+      currentrec = pg.getInt(INT_SIZE);
+	  this.maxOffsetInBlock = pg.getInt(LogMgr.LAST_POS);
    }
 }
