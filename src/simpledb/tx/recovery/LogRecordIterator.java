@@ -14,7 +14,25 @@ import simpledb.server.SimpleDB;
  * @author Edward Sciore
  */
 class LogRecordIterator implements Iterator<LogRecord> {
-   private Iterator<BasicLogRecord> iter = SimpleDB.logMgr().iterator();
+   private Iterator<BasicLogRecord> iter;
+   
+   /**
+    * By default, the log will be iterated in the reverse order
+    */
+   public LogRecordIterator() {
+	   this(false);
+   }
+   
+   /**
+    * This constructor is used to determine the direction of log traversal
+    * @param forwardIteration The log will be iterated in the forward direction, else the reverse
+    */
+   public LogRecordIterator(boolean forwardIteration){
+	   if(forwardIteration)
+		   iter = SimpleDB.logMgr().forwardIterator();
+	   else
+		   iter = SimpleDB.logMgr().backwordIterator();
+   }
    
    public boolean hasNext() {
       return iter.hasNext();

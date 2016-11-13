@@ -10,21 +10,23 @@ import java.util.Iterator;
  * 
  * @author Edward Sciore
  */
-class LogIterator implements Iterator<BasicLogRecord> {
+class ForwardLogIterator implements Iterator<BasicLogRecord> {
    private Block blk;
    private Page pg = new Page();
    private int currentrec;
    
    /**
-    * Creates an iterator for the records in the log file,
-    * positioned after the last log record.
-    * This constructor is called exclusively by
+    * Creates an iterator for the records in the log file
+    * Give the block and the offset of the latest checkpoint or the start of the file as the input
     * {@link LogMgr#iterator()}.
     */
-   LogIterator(Block blk) {
+   ForwardLogIterator(Block blk, int offset) {
       this.blk = blk;
       pg.read(blk);
-      currentrec = pg.getInt(LogMgr.LAST_POS);
+      if(offset == -1)
+    	  currentrec = INT_SIZE;
+      else
+    	  currentrec = offset;
    }
    
    /**
@@ -33,7 +35,7 @@ class LogIterator implements Iterator<BasicLogRecord> {
     * @return true if there is an earlier record
     */
    public boolean hasNext() {
-      return currentrec>0 || blk.number()>0;
+     // return currentrec>0 || blk.number()>0;
    }
    
    /**
@@ -44,22 +46,14 @@ class LogIterator implements Iterator<BasicLogRecord> {
     * @return the next earliest log record
     */
    public BasicLogRecord next() {
-      if (currentrec == 0) 
-         moveToNextBlock();
-      currentrec = pg.getInt(currentrec);
-      return new BasicLogRecord(pg, currentrec+2*INT_SIZE);
+//      if (currentrec == 0) 
+//         moveToNextBlock();
+//      currentrec = pg.getInt(currentrec);
+//      return new BasicLogRecord(pg, currentrec+INT_SIZE);
    }
    
    public void remove() {
       throw new UnsupportedOperationException();
-   }
-   
-   public Block getBlock(){
-	   return blk;
-   }
-   
-   public int getOffset(){
-	   return currentrec;
    }
    
    /**
@@ -67,8 +61,8 @@ class LogIterator implements Iterator<BasicLogRecord> {
     * and positions it after the last record in that block.
     */
    private void moveToNextBlock() {
-      blk = new Block(blk.fileName(), blk.number()-1);
-      pg.read(blk);
-      currentrec = pg.getInt(LogMgr.LAST_POS);
+//      blk = new Block(blk.fileName(), blk.number()-1);
+//      pg.read(blk);
+//      currentrec = pg.getInt(LogMgr.LAST_POS);
    }
 }

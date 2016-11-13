@@ -73,6 +73,17 @@ public class LogMgr implements Iterable<BasicLogRecord> {
       return new LogIterator(currentblk);
    }
 
+   public synchronized LogIterator backwordIterator() {
+      flush();
+      return new LogIterator(currentblk);
+   }
+
+   public synchronized ForwardLogIterator forwardIterator() {
+      flush();
+      return new ForwardLogIterator();
+   }
+
+   
    /**
     * Appends a log record to the file.
     * The record contains an arbitrary array of strings and integers.
@@ -83,13 +94,14 @@ public class LogMgr implements Iterable<BasicLogRecord> {
     * @return the LSN of the final value
     */
    public synchronized int append(Object[] rec) {
-      int recsize = INT_SIZE;  // 4 bytes for the integer that points to the previous log record
+      int recsize = 2*INT_SIZE;  // 4 bytes for the integer that points to the previous log record and the next log record
       for (Object obj : rec)
          recsize += size(obj);
       if (currentpos + recsize >= BLOCK_SIZE){ // the log record doesn't fit,
          flush();        // so move to the next block.
          appendNewBlock();
       }
+      appendVal(currentpos + recsize); //Value used to store the offset of the next log record
       for (Object obj : rec)
          appendVal(obj);
       finalizeRecord();
@@ -161,7 +173,7 @@ public class LogMgr implements Iterable<BasicLogRecord> {
       setLastRecordPosition(currentpos);
       currentpos += INT_SIZE;
    }
-
+   
    private int getLastRecordPosition() {
       return mypage.getInt(LAST_POS);
    }
