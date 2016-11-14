@@ -87,7 +87,7 @@ class ForwardLogIterator implements Iterator<BasicLogRecord> {
    private void moveToNextBlock() {
       blk = new Block(blk.fileName(), blk.number()+1);
       pg.read(blk);
-      currentrec = pg.getInt(INT_SIZE);
+      currentrec = INT_SIZE;
 	  this.maxOffsetInBlock = pg.getInt(LogMgr.LAST_POS);
    }
 }

@@ -67,7 +67,7 @@ public class RecoveryMgr {
       if (isTempBlock(blk))
          return -1;
       else
-         return new SetIntRecord(txnum, blk, offset, oldval).writeToLog();
+         return new SetIntRecord(txnum, blk, offset, oldval, newval).writeToLog();
    }
 
    /**
@@ -84,7 +84,7 @@ public class RecoveryMgr {
       if (isTempBlock(blk))
          return -1;
       else
-         return new SetStringRecord(txnum, blk, offset, oldval).writeToLog();
+         return new SetStringRecord(txnum, blk, offset, oldval, newval).writeToLog();
    }
 
    /**
@@ -116,15 +116,32 @@ public class RecoveryMgr {
     */
    private void doRecover() {
       Collection<Integer> finishedTxs = new ArrayList<Integer>();
-      Iterator<LogRecord> iter = new LogRecordIterator();
-      while (iter.hasNext()) {
-         LogRecord rec = iter.next();
+      Set<Integer> commitedTxsList = new HashSet<Integer>();
+      Set<Integer> rollbackTxsList = new HashSet<Integer>();
+      Iterator<LogRecord> undoIterator = new LogRecordIterator();
+      Iterator<LogRecord> redoIterator = new LogRecordIterator(true);
+      while (undoIterator.hasNext()) {
+         LogRecord rec = undoIterator.next();
          if (rec.op() == CHECKPOINT)
-            return;
-         if (rec.op() == COMMIT || rec.op() == ROLLBACK)
-            finishedTxs.add(rec.txNumber());
+            break;
+         else if (rec.op() == COMMIT ){
+        	 commitedTxsList.add(rec.txNumber()); 
+        	 finishedTxs.add(rec.txNumber());
+            }
+         else if (rec.op() == ROLLBACK){
+        	 rollbackTxsList.add(rec.txNumber());
+        	 finishedTxs.add(rec.txNumber());
+         }
          else if (!finishedTxs.contains(rec.txNumber()))
             rec.undo(txnum);
+         System.out.println("Undo is happening for " + txnum + " Record:" + rec.toString() );
+      }
+      while(redoIterator.hasNext()){
+    	  LogRecord rec = redoIterator.next();
+    	  if(commitedTxsList.contains(rec.txNumber())){
+    		  rec.redo(txnum);
+    		  System.out.println("Redo is happening for " + txnum  + " Record:" + rec.toString()  );
+    	  }
       }
    }
 

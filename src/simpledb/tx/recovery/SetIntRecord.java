@@ -6,7 +6,7 @@ import simpledb.file.Block;
 import simpledb.log.BasicLogRecord;
 
 class SetIntRecord implements LogRecord {
-   private int txnum, offset, val;
+   private int txnum, offset, oldval, newval;
    private Block blk;
 
    /**
@@ -16,11 +16,12 @@ class SetIntRecord implements LogRecord {
     * @param offset the offset of the value in the block
     * @param val the new value
     */
-   public SetIntRecord(int txnum, Block blk, int offset, int val) {
+   public SetIntRecord(int txnum, Block blk, int offset, int oldval, int newval) {
       this.txnum = txnum;
       this.blk = blk;
       this.offset = offset;
-      this.val = val;
+      this.oldval = oldval;
+      this.newval = newval;
    }
 
    /**
@@ -33,7 +34,8 @@ class SetIntRecord implements LogRecord {
       int blknum = rec.nextInt();
       blk = new Block(filename, blknum);
       offset = rec.nextInt();
-      val = rec.nextInt();
+      oldval = rec.nextInt();
+      newval = rec.nextInt();
    }
 
    /**
@@ -46,7 +48,7 @@ class SetIntRecord implements LogRecord {
     */
    public int writeToLog() {
       Object[] rec = new Object[] {SETINT, txnum, blk.fileName(),
-         blk.number(), offset, val};
+         blk.number(), offset, oldval, newval};
       return logMgr.append(rec);
    }
 
@@ -59,11 +61,11 @@ class SetIntRecord implements LogRecord {
    }
 
    public String toString() {
-      return "<SETINT " + txnum + " " + blk + " " + offset + " " + val + ">";
+      return "<SETINT " + txnum + " " + blk + " " + offset + " " + oldval + " " + newval + ">";
    }
 
    /**
-    * Replaces the specified data value with the value saved in the log record.
+    * Replaces the specified data value with the old value saved in the log record.
     * The method pins a buffer to the specified block,
     * calls setInt to restore the saved value
     * (using a dummy LSN), and unpins the buffer.
@@ -72,7 +74,21 @@ class SetIntRecord implements LogRecord {
    public void undo(int txnum) {
       BufferMgr buffMgr = SimpleDB.bufferMgr();
       Buffer buff = buffMgr.pin(blk);
-      buff.setInt(offset, val, txnum, -1);
+      buff.setInt(offset, oldval, txnum, -1);
+      buffMgr.unpin(buff);
+   }
+   
+   /**
+    * Replaces the specified data value with the new value saved in the log record.
+    * The method pins a buffer to the specified block,
+    * calls setInt to restore the saved value
+    * (using a dummy LSN), and unpins the buffer.
+    * @see simpledb.tx.recovery.LogRecord#undo(int)
+    */
+   public void redo(int txnum) {
+      BufferMgr buffMgr = SimpleDB.bufferMgr();
+      Buffer buff = buffMgr.pin(blk);
+      buff.setInt(offset, newval, txnum, -1);
       buffMgr.unpin(buff);
    }
 }
