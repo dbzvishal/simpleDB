@@ -134,7 +134,6 @@ public class RecoveryMgr {
          }
          else if (!finishedTxs.contains(rec.txNumber()))
             rec.undo(txnum);
-         System.out.println("Undo is happening for " + txnum + " Record:" + rec.toString() );
       }
       while(redoIterator.hasNext()){
     	  LogRecord rec = redoIterator.next();
