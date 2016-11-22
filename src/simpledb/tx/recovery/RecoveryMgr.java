@@ -139,7 +139,6 @@ public class RecoveryMgr {
     	  LogRecord rec = redoIterator.next();
     	  if(commitedTxsList.contains(rec.txNumber())){
     		  rec.redo(txnum);
-    		  System.out.println("Redo is happening for " + txnum  + " Record:" + rec.toString()  );
     	  }
       }
    }
