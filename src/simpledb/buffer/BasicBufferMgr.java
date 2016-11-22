@@ -66,6 +66,8 @@ class BasicBufferMgr {
          buff = chooseUnpinnedBuffer();
          if (buff == null)
             return null;
+         if(buff.block()!=null)
+        	 System.out.println("Buffer replaced: " + buff.block().toString());
          buff.assignToBlock(blk);
          updateBlockAndBufferReferences(blk, buff);
       }
