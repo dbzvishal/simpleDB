@@ -121,23 +121,29 @@ public class RecoveryMgr {
       Iterator<LogRecord> undoIterator = new LogRecordIterator();
       Iterator<LogRecord> redoIterator = new LogRecordIterator(true);
       while (undoIterator.hasNext()) {
-         LogRecord rec = undoIterator.next();
-         if (rec.op() == CHECKPOINT)
-            break;
-         else if (rec.op() == COMMIT ){
-        	 commitedTxsList.add(rec.txNumber()); 
-        	 finishedTxs.add(rec.txNumber());
-            }
-         else if (rec.op() == ROLLBACK){
-        	 rollbackTxsList.add(rec.txNumber());
-        	 finishedTxs.add(rec.txNumber());
-         }
-         else if (!finishedTxs.contains(rec.txNumber()))
-            rec.undo(txnum);
+    	  LogRecord rec = undoIterator.next();
+    	  if (rec.op() == CHECKPOINT)
+    		  break;
+    	  else if (rec.op() == COMMIT ){
+    		  commitedTxsList.add(rec.txNumber()); 
+    		  finishedTxs.add(rec.txNumber());
+    		  System.out.println("Commited transaction " + rec.txNumber());
+    	  }
+    	  else if (rec.op() == ROLLBACK){
+    		  rollbackTxsList.add(rec.txNumber());
+    		  finishedTxs.add(rec.txNumber());
+    		  System.out.println("Rolling back transaction " + rec.txNumber());
+    	  }
+    	  else if ((rec.op()==SETINT || rec.op()==SETSTRING) && !finishedTxs.contains(rec.txNumber())){	 
+    		  System.out.println("Undo transaction " + rec.txNumber() + " - " + rec.toString());
+    		  rec.undo(txnum);
+    	  }
       }
+      System.out.println("Starting redo phase of recovery");
       while(redoIterator.hasNext()){
     	  LogRecord rec = redoIterator.next();
-    	  if(commitedTxsList.contains(rec.txNumber())){
+    	  if((rec.op()==SETINT || rec.op()==SETSTRING) && commitedTxsList.contains(rec.txNumber())){
+    		  System.out.println("Redo transaction " + rec.txNumber() + " - " + rec.toString());
     		  rec.redo(txnum);
     	  }
       }

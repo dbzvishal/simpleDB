@@ -9,7 +9,7 @@ import simpledb.file.Block;
 import simpledb.server.SimpleDB;
 import simpledb.tx.recovery.*;
 
-public class RecoveryTest {
+public class RecoveryTest2 {
 
 	public static void main(String[] args) {
 		//Initialize a simpleDB client
@@ -27,19 +27,23 @@ public class RecoveryTest {
 		RecoveryMgr rm_2 = new RecoveryMgr(2);
 		
 		Block blk1 = new Block("block-1.tbl", 1);
+		Block blk2 = new Block("block-2.tbl", 1);
+		Block blk3 = new Block("block-3.tbl", 1);
 		blockList.add(blk1);
+		blockList.add(blk2);
+		blockList.add(blk3);
 		
 		Buffer buff1 = basicBufferMgr.pin(blk1);
 		bufferList.add(buff1);
+		bufferList.add(basicBufferMgr.pin(blk2));
+		bufferList.add(basicBufferMgr.pin(blk2));
 		
 		//Perform log operations for transaction 1
-		new SetIntRecord(1, blk1, 4, 100, 200).writeToLog();
-		
+		new SetStringRecord(1, blk1, 4, "yyy", "zzz").writeToLog();
+		new SetStringRecord(1, blk2, 4, "www", "xxx").writeToLog();
+		new SetStringRecord(2, blk3, 4, "uuu", "vvv").writeToLog();
 		new CommitRecord(1).writeToLog();
-		
-		//Perform log operations for transaction 2
-		new SetIntRecord(2, blk1, 8, 10, 20).writeToLog();
-		new SetStringRecord(2, blk1, 12, "hello", "world").writeToLog();
+		new SetStringRecord(2, blk1, 20, "zzz", "ttt").writeToLog();
 		
 		//Recover both transactions
 		System.out.println("Recovery part 1");
