@@ -23,8 +23,11 @@ StartRecord.java
 List of files added:
 ForwardLogIterator
 
-List of test files added. These can be run directly:
+List of test files added:
 BufferTest.java
 BufferTest2.java
 RecoveryTest.java
 RecoveryTest2.java
+
+The test files can be found in the "test" package.
+The test files can be run directly as a java application using the files in the "simpledb" package.
