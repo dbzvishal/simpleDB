@@ -12,7 +12,7 @@ public class BufferTest {
 
 	public static void main(String[] args) {
 		SimpleDB.init("simpleDB");
-		BufferMgr basicBufferMgr = SimpleDB.bufferMgr() ;
+		BufferMgr basicBufferMgr = SimpleDB.bufferMgr();
 		List<Block> blockList = new ArrayList<>();
 		List<Buffer> bufferList = new ArrayList<>();
 		for(int i=0;i<8;i++){

@@ -13,7 +13,7 @@ import simpledb.server.SimpleDB;
  * this class understands the meaning of the log records.
  * @author Edward Sciore
  */
-class LogRecordIterator implements Iterator<LogRecord> {
+public class LogRecordIterator implements Iterator<LogRecord> {
    private Iterator<BasicLogRecord> iter;
    
    /**
