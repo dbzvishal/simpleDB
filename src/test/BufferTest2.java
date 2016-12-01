@@ -8,7 +8,7 @@ import simpledb.buffer.BufferMgr;
 import simpledb.file.Block;
 import simpledb.server.SimpleDB;
 
-public class BufferTest {
+public class BufferTest2 {
 
 	public static void main(String[] args) {
 		SimpleDB.init("simpleDB");
@@ -25,10 +25,16 @@ public class BufferTest {
 			bufferList.add(basicBufferMgr.pin(blk));
 		}
 		System.out.println("Available: " + basicBufferMgr.available());
-		basicBufferMgr.unpin(bufferList.get(3));
+		basicBufferMgr.unpin(bufferList.get(5));
 		basicBufferMgr.unpin(bufferList.get(2));
+		basicBufferMgr.unpin(bufferList.get(6));
+		basicBufferMgr.unpin(bufferList.get(4));
+		basicBufferMgr.unpin(bufferList.get(1));
 		System.out.println("Available: " + basicBufferMgr.available());
 		basicBufferMgr.pin(new Block("filename9.tbl", 1));
+		basicBufferMgr.pin(new Block("filename10.tbl", 1));
+		basicBufferMgr.pin(new Block("filename11.tbl", 1));
+		basicBufferMgr.pin(new Block("filename12.tbl", 1));
 		System.out.println("Available: " + basicBufferMgr.available());
 	}
 
