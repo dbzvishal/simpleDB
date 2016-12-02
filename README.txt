@@ -30,4 +30,4 @@ RecoveryTest.java
 RecoveryTest2.java
 
 The test files can be found in the "test" package.
-The test files can be run directly as a java application using the files in the "simpledb" package.
+The test files can be run directly as a java application using the files in the "simpledb" package in the classpath.
